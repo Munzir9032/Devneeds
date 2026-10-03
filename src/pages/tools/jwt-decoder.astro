@@ -1,0 +1,438 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import "../../styles/global.css";
+---
+
+<BaseLayout
+    title="JWT Decoder - DevNeeds"
+    description="Free online JWT decoder. Decode and inspect JSON Web Tokens (Header, Payload, Claims) safely in your browser."
+>
+    <Header />
+
+    <main class="tool-page">
+        <div class="container">
+            <!-- Breadcrumbs / Header -->
+            <div class="tool-header">
+                <a href="/tools" class="back-link">← All tools</a>
+                <div class="badge">DEVELOPER UTILITIES</div>
+                <h1>JWT Decoder</h1>
+                <p>Inspect JSON Web Token headers, payloads, claims, and signatures directly in your browser.</p>
+            </div>
+
+            <div class="jwt-layout">
+                <!-- Left: Encoded Token Input -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="jwt-input">Encoded Token</label>
+                        <div class="panel-actions">
+                            <button id="sample-btn" type="button" class="btn-action">Load Sample</button>
+                            <button id="clear-btn" type="button" class="btn-ghost">Clear</button>
+                        </div>
+                    </div>
+                    <textarea
+                        id="jwt-input"
+                        placeholder="Paste an encoded JWT (e.g. eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...)"
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+
+                <!-- Right: Decoded Sections -->
+                <div class="decoded-column">
+                    <!-- Token Status Badge -->
+                    <div id="token-status" class="token-status" hidden></div>
+
+                    <!-- Header -->
+                    <div class="panel">
+                        <div class="panel-header header-accent">
+                            <label>Header (Algorithm & Token Type)</label>
+                            <button type="button" class="btn-copy" data-target="header-output">Copy</button>
+                        </div>
+                        <pre id="header-output" class="code-box">{}</pre>
+                    </div>
+
+                    <!-- Payload -->
+                    <div class="panel">
+                        <div class="panel-header payload-accent">
+                            <label>Payload (Data & Claims)</label>
+                            <button type="button" class="btn-copy" data-target="payload-output">Copy</button>
+                        </div>
+                        <pre id="payload-output" class="code-box">{}</pre>
+                    </div>
+
+                    <!-- Signature -->
+                    <div class="panel">
+                        <div class="panel-header signature-accent">
+                            <label>Signature</label>
+                            <button type="button" class="btn-copy" data-target="signature-output">Copy</button>
+                        </div>
+                        <div id="signature-output" class="signature-box">Waiting for token...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="error-box" class="error-box" hidden>
+                Invalid JWT format. A valid token consists of three parts separated by dots.
+            </div>
+
+            <p class="privacy-tag">⚡ Decoding happens entirely in your browser. Sensitive payload tokens are never sent across the internet.</p>
+        </div>
+    </main>
+
+    <Footer />
+</BaseLayout>
+
+<script>
+    const jwtInput = document.getElementById("jwt-input") as HTMLTextAreaElement | null;
+    const headerOutput = document.getElementById("header-output") as HTMLElement | null;
+    const payloadOutput = document.getElementById("payload-output") as HTMLElement | null;
+    const signatureOutput = document.getElementById("signature-output") as HTMLElement | null;
+    const errorBox = document.getElementById("error-box") as HTMLDivElement | null;
+    const tokenStatus = document.getElementById("token-status") as HTMLDivElement | null;
+    const clearBtn = document.getElementById("clear-btn") as HTMLButtonElement | null;
+    const sampleBtn = document.getElementById("sample-btn") as HTMLButtonElement | null;
+    const copyButtons = document.querySelectorAll<HTMLButtonElement>(".btn-copy");
+
+    const SAMPLE_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkphbmUgRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoyNTI0NjA4MDAwfQ.XgqCqA_c0P3jKj24d5wI2n85l4k2m-3d234kd0dld3w";
+
+    // Base64Url decode helper supporting UTF-8
+    function decodeBase64Url(str: string): string {
+        let output = str.replace(/-/g, "+").replace(/_/g, "/");
+        switch (output.length % 4) {
+            case 0: break;
+            case 2: output += "=="; break;
+            case 3: output += "="; break;
+            default: throw new Error("Illegal base64url string!");
+        }
+        const binary = atob(output);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return new TextDecoder().decode(bytes);
+    }
+
+    function checkExpiry(payload: Record<string, any>) {
+        if (!tokenStatus) return;
+
+        if (typeof payload.exp !== "number") {
+            tokenStatus.hidden = true;
+            return;
+        }
+
+        const expTimestampMs = payload.exp * 1000;
+        const now = Date.now();
+        const dateStr = new Date(expTimestampMs).toLocaleString();
+
+        tokenStatus.hidden = false;
+        if (now > expTimestampMs) {
+            tokenStatus.className = "token-status expired";
+            tokenStatus.textContent = `Token expired on ${dateStr}`;
+        } else {
+            tokenStatus.className = "token-status active";
+            tokenStatus.textContent = `Token valid until ${dateStr}`;
+        }
+    }
+
+    function decodeToken() {
+        const raw = jwtInput?.value.trim() ?? "";
+
+        if (!raw) {
+            if (headerOutput) headerOutput.textContent = "{}";
+            if (payloadOutput) payloadOutput.textContent = "{}";
+            if (signatureOutput) signatureOutput.textContent = "Waiting for token...";
+            if (errorBox) errorBox.hidden = true;
+            if (tokenStatus) tokenStatus.hidden = true;
+            return;
+        }
+
+        const parts = raw.split(".");
+        if (parts.length !== 3) {
+            if (errorBox) errorBox.hidden = false;
+            if (tokenStatus) tokenStatus.hidden = true;
+            return;
+        }
+
+        try {
+            const headerJson = JSON.parse(decodeBase64Url(parts[0]));
+            const payloadJson = JSON.parse(decodeBase64Url(parts[1]));
+
+            if (headerOutput) headerOutput.textContent = JSON.stringify(headerJson, null, 2);
+            if (payloadOutput) payloadOutput.textContent = JSON.stringify(payloadJson, null, 2);
+            if (signatureOutput) signatureOutput.textContent = parts[2] || "(Empty signature)";
+
+            checkExpiry(payloadJson);
+            if (errorBox) errorBox.hidden = true;
+        } catch {
+            if (errorBox) errorBox.hidden = false;
+            if (tokenStatus) tokenStatus.hidden = true;
+        }
+    }
+
+    jwtInput?.addEventListener("input", decodeToken);
+
+    sampleBtn?.addEventListener("click", () => {
+        if (jwtInput) {
+            jwtInput.value = SAMPLE_JWT;
+            decodeToken();
+        }
+    });
+
+    clearBtn?.addEventListener("click", () => {
+        if (jwtInput) jwtInput.value = "";
+        decodeToken();
+        jwtInput?.focus();
+    });
+
+    copyButtons.forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const targetId = btn.dataset.target;
+            const targetEl = document.getElementById(targetId || "");
+            if (!targetEl || !targetEl.textContent) return;
+
+            await navigator.clipboard.writeText(targetEl.textContent);
+            const originalText = btn.textContent;
+            btn.textContent = "Copied!";
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 1600);
+        });
+    });
+</script>
+
+<style>
+    .tool-page {
+        padding: 50px 0 90px;
+    }
+
+    .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 24px;
+        width: 100%;
+    }
+
+    .tool-header {
+        margin-bottom: 28px;
+    }
+
+    .back-link {
+        display: block;
+        margin-bottom: 12px;
+        color: #6366f1;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .badge {
+        display: inline-block;
+        margin-bottom: 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        color: #6366f1;
+    }
+
+    .tool-header h1 {
+        margin: 0 0 10px;
+        font-size: clamp(32px, 4vw, 44px);
+        letter-spacing: -1.5px;
+        color: #111827;
+    }
+
+    .tool-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .jwt-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .panel {
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafafa;
+    }
+
+    .header-accent label {
+        color: #dc2626;
+    }
+
+    .payload-accent label {
+        color: #7c3aed;
+    }
+
+    .signature-accent label {
+        color: #0284c7;
+    }
+
+    .panel-header label {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .panel-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: color 0.15s ease;
+    }
+
+    .btn-ghost:hover {
+        color: #ef4444;
+    }
+
+    .btn-action {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        color: #4f46e5;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .btn-action:hover {
+        background: #e0e7ff;
+    }
+
+    .btn-copy {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .btn-copy:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+
+    textarea {
+        width: 100%;
+        min-height: 520px;
+        padding: 18px;
+        border: none;
+        outline: none;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #1f2937;
+        background: #ffffff;
+        box-sizing: border-box;
+        word-break: break-all;
+    }
+
+    .decoded-column {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .token-status {
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .token-status.active {
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+    }
+
+    .token-status.expired {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+    }
+
+    .code-box {
+        margin: 0;
+        padding: 16px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #1e293b;
+        background: #fdfdfd;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .signature-box {
+        padding: 16px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        color: #0284c7;
+        word-break: break-all;
+        background: #fdfdfd;
+    }
+
+    .error-box {
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        color: #dc2626;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .privacy-tag {
+        margin-top: 24px;
+        color: #9ca3af;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    @media (max-width: 900px) {
+        .jwt-layout {
+            grid-template-columns: 1fr;
+        }
+
+        textarea {
+            min-height: 200px;
+        }
+    }
+</style>

@@ -1,0 +1,528 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import "../../styles/global.css";
+---
+
+<BaseLayout
+    title="Epoch & Unix Timestamp Converter - DevNeeds"
+    description="Free online Unix timestamp converter. Convert epoch seconds and milliseconds to human-readable date formats and vice versa."
+>
+    <Header />
+
+    <main class="tool-page">
+        <div class="container">
+            <div class="tool-header">
+                <a href="/tools" class="back-link">← All tools</a>
+                <div class="badge">DEVELOPER UTILITIES</div>
+                <h1>Timestamp Converter</h1>
+                <p>Convert Unix epoch timestamps to human dates, and human dates back to epoch seconds and milliseconds.</p>
+            </div>
+
+            <!-- Live Clock Banner -->
+            <div class="live-banner">
+                <div class="live-left">
+                    <span class="live-dot"></span>
+                    <span class="live-title">Current Unix Epoch:</span>
+                    <code id="current-epoch" class="live-code">-</code>
+                </div>
+                <button id="use-now-btn" type="button" class="btn-action">Insert Current Time</button>
+            </div>
+
+            <div class="converter-grid">
+                <!-- Section 1: Timestamp to Date -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="epoch-input">Unix Epoch to Human Date</label>
+                        <button id="clear-epoch-btn" type="button" class="btn-ghost">Clear</button>
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="input-row">
+                            <input
+                                id="epoch-input"
+                                type="text"
+                                placeholder="e.g. 1774320000 or 1774320000000"
+                                spellcheck="false"
+                            />
+                            <div class="unit-toggle">
+                                <label class="radio-label">
+                                    <input type="radio" name="epoch-unit" value="auto" checked />
+                                    <span>Auto</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="epoch-unit" value="seconds" />
+                                    <span>Sec (s)</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="epoch-unit" value="ms" />
+                                    <span>Ms (ms)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Results List -->
+                        <div class="results-list">
+                            <div class="result-row">
+                                <span class="label">UTC Time:</span>
+                                <div class="val-group">
+                                    <input id="res-utc" type="text" readonly placeholder="UTC Date..." />
+                                    <button type="button" class="btn-copy" data-target="res-utc">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="result-row">
+                                <span class="label">Local Time:</span>
+                                <div class="val-group">
+                                    <input id="res-local" type="text" readonly placeholder="Local Time..." />
+                                    <button type="button" class="btn-copy" data-target="res-local">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="result-row">
+                                <span class="label">ISO 8601:</span>
+                                <div class="val-group">
+                                    <input id="res-iso" type="text" readonly placeholder="ISO 8601..." />
+                                    <button type="button" class="btn-copy" data-target="res-iso">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="result-row">
+                                <span class="label">Relative:</span>
+                                <div class="val-group">
+                                    <input id="res-relative" type="text" readonly placeholder="e.g. in 2 hours" />
+                                    <button type="button" class="btn-copy" data-target="res-relative">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Date to Timestamp -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="date-picker">Human Date to Unix Epoch</label>
+                        <button id="clear-date-btn" type="button" class="btn-ghost">Clear</button>
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="input-row">
+                            <input
+                                id="date-picker"
+                                type="datetime-local"
+                                step="1"
+                            />
+                        </div>
+
+                        <!-- Results List -->
+                        <div class="results-list">
+                            <div class="result-row">
+                                <span class="label">Epoch Seconds:</span>
+                                <div class="val-group">
+                                    <input id="res-sec" type="text" readonly placeholder="Seconds (s)..." />
+                                    <button type="button" class="btn-copy" data-target="res-sec">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="result-row">
+                                <span class="label">Epoch Milliseconds:</span>
+                                <div class="val-group">
+                                    <input id="res-ms" type="text" readonly placeholder="Milliseconds (ms)..." />
+                                    <button type="button" class="btn-copy" data-target="res-ms">Copy</button>
+                                </div>
+                            </div>
+
+                            <div class="result-row">
+                                <span class="label">RFC 2822:</span>
+                                <div class="val-group">
+                                    <input id="res-rfc" type="text" readonly placeholder="RFC 2822..." />
+                                    <button type="button" class="btn-copy" data-target="res-rfc">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="privacy-tag">⚡ All conversions use your browser's local timezone. No data is sent over the network.</p>
+        </div>
+    </main>
+
+    <Footer />
+</BaseLayout>
+
+<script>
+    // Elements - Live Ticker
+    const currentEpochEl = document.querySelector("#current-epoch") as HTMLElement | null;
+    const useNowBtn = document.querySelector("#use-now-btn") as HTMLButtonElement | null;
+
+    // Elements - Epoch to Date
+    const epochInput = document.querySelector("#epoch-input") as HTMLInputElement | null;
+    const epochUnits = document.querySelectorAll<HTMLInputElement>('input[name="epoch-unit"]');
+    const clearEpochBtn = document.querySelector("#clear-epoch-btn") as HTMLButtonElement | null;
+    const resUtc = document.querySelector("#res-utc") as HTMLInputElement | null;
+    const resLocal = document.querySelector("#res-local") as HTMLInputElement | null;
+    const resIso = document.querySelector("#res-iso") as HTMLInputElement | null;
+    const resRelative = document.querySelector("#res-relative") as HTMLInputElement | null;
+
+    // Elements - Date to Epoch
+    const datePicker = document.querySelector("#date-picker") as HTMLInputElement | null;
+    const clearDateBtn = document.querySelector("#clear-date-btn") as HTMLButtonElement | null;
+    const resSec = document.querySelector("#res-sec") as HTMLInputElement | null;
+    const resMs = document.querySelector("#res-ms") as HTMLInputElement | null;
+    const resRfc = document.querySelector("#res-rfc") as HTMLInputElement | null;
+
+    const copyButtons = document.querySelectorAll<HTMLButtonElement>(".btn-copy");
+
+    // Live Epoch Clock
+    function updateClock() {
+        if (currentEpochEl) {
+            currentEpochEl.textContent = Math.floor(Date.now() / 1000).toString();
+        }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Relative Time Helper
+    function getRelativeTime(timestampMs: number): string {
+        const diffSec = Math.round((timestampMs - Date.now()) / 1000);
+        const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+        const abs = Math.abs(diffSec);
+        if (abs < 60) return rtf.format(diffSec, "second");
+        if (abs < 3600) return rtf.format(Math.round(diffSec / 60), "minute");
+        if (abs < 86400) return rtf.format(Math.round(diffSec / 3600), "hour");
+        if (abs < 2592000) return rtf.format(Math.round(diffSec / 86400), "day");
+        if (abs < 31536000) return rtf.format(Math.round(diffSec / 2592000), "month");
+        return rtf.format(Math.round(diffSec / 31536000), "year");
+    }
+
+    // Convert Epoch to Date
+    function convertEpochToDate() {
+        if (!epochInput) return;
+        const val = epochInput.value.trim();
+
+        if (!val || isNaN(Number(val))) {
+            if (resUtc) resUtc.value = "";
+            if (resLocal) resLocal.value = "";
+            if (resIso) resIso.value = "";
+            if (resRelative) resRelative.value = "";
+            return;
+        }
+
+        const num = Number(val);
+        const unit = document.querySelector<HTMLInputElement>('input[name="epoch-unit"]:checked')?.value || "auto";
+
+        let ms = num;
+        if (unit === "seconds" || (unit === "auto" && num < 100000000000)) {
+            ms = num * 1000;
+        }
+
+        const date = new Date(ms);
+
+        if (isNaN(date.getTime())) {
+            if (resUtc) resUtc.value = "Invalid Date";
+            if (resLocal) resLocal.value = "Invalid Date";
+            if (resIso) resIso.value = "Invalid Date";
+            if (resRelative) resRelative.value = "Invalid Date";
+            return;
+        }
+
+        if (resUtc) resUtc.value = date.toUTCString();
+        if (resLocal) resLocal.value = date.toString();
+        if (resIso) resIso.value = date.toISOString();
+        if (resRelative) resRelative.value = getRelativeTime(date.getTime());
+    }
+
+    // Convert Date Picker to Epoch
+    function convertDateToEpoch() {
+        if (!datePicker || !datePicker.value) {
+            if (resSec) resSec.value = "";
+            if (resMs) resMs.value = "";
+            if (resRfc) resRfc.value = "";
+            return;
+        }
+
+        const date = new Date(datePicker.value);
+        if (isNaN(date.getTime())) return;
+
+        const ms = date.getTime();
+        if (resSec) resSec.value = Math.floor(ms / 1000).toString();
+        if (resMs) resMs.value = ms.toString();
+        if (resRfc) resRfc.value = date.toUTCString();
+    }
+
+    // Event Listeners
+    epochInput?.addEventListener("input", convertEpochToDate);
+    epochUnits.forEach((u) => u.addEventListener("change", convertEpochToDate));
+
+    datePicker?.addEventListener("input", convertDateToEpoch);
+
+    useNowBtn?.addEventListener("click", () => {
+        const nowMs = Date.now();
+        if (epochInput) {
+            epochInput.value = Math.floor(nowMs / 1000).toString();
+            convertEpochToDate();
+        }
+
+        if (datePicker) {
+            const localIso = new Date(nowMs - new Date().getTimezoneOffset() * 60000)
+                .toISOString()
+                .slice(0, 19);
+            datePicker.value = localIso;
+            convertDateToEpoch();
+        }
+    });
+
+    clearEpochBtn?.addEventListener("click", () => {
+        if (epochInput) epochInput.value = "";
+        convertEpochToDate();
+        epochInput?.focus();
+    });
+
+    clearDateBtn?.addEventListener("click", () => {
+        if (datePicker) datePicker.value = "";
+        convertDateToEpoch();
+        datePicker?.focus();
+    });
+
+    // Copy handler
+    copyButtons.forEach((btn) => {
+        btn.addEventListener("click", async () => {
+            const targetId = btn.getAttribute("data-target");
+            const targetInput = document.getElementById(targetId || "") as HTMLInputElement | null;
+            if (!targetInput || !targetInput.value) return;
+
+            await navigator.clipboard.writeText(targetInput.value);
+            const orig = btn.textContent;
+            btn.textContent = "Copied!";
+            setTimeout(() => {
+                btn.textContent = orig;
+            }, 1500);
+        });
+    });
+
+    // Initial state: populate with current time
+    if (epochInput) {
+        epochInput.value = Math.floor(Date.now() / 1000).toString();
+        convertEpochToDate();
+    }
+</script>
+
+<style>
+    .tool-page { padding: 50px 0 90px; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; width: 100%; }
+    .tool-header { margin-bottom: 24px; }
+    .back-link { display: block; margin-bottom: 12px; color: #6366f1; font-size: 13px; font-weight: 600; text-decoration: none; }
+    .badge { display: inline-block; margin-bottom: 10px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; color: #6366f1; }
+    .tool-header h1 { margin: 0 0 10px; font-size: clamp(32px, 4vw, 44px); letter-spacing: -1.5px; color: #111827; }
+    .tool-header p { margin: 0; color: #64748b; font-size: 16px; }
+
+    /* Live Clock Banner */
+    .live-banner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 18px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .live-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .live-dot {
+        width: 8px;
+        height: 8px;
+        background: #22c55e;
+        border-radius: 50%;
+        box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+    }
+
+    .live-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .live-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 15px;
+        font-weight: 700;
+        color: #4f46e5;
+    }
+
+    .converter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    .panel {
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafafa;
+    }
+
+    .panel-header label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .panel-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .input-row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .input-row input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 15px;
+        outline: none;
+        color: #111827;
+        box-sizing: border-box;
+    }
+
+    .input-row input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .unit-toggle {
+        display: flex;
+        gap: 16px;
+    }
+
+    .radio-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+    }
+
+    .radio-label input {
+        accent-color: #4f46e5;
+        cursor: pointer;
+    }
+
+    .results-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .result-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .result-row .label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .val-group {
+        display: flex;
+        gap: 8px;
+    }
+
+    .val-group input {
+        flex: 1;
+        padding: 8px 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        color: #1e293b;
+        outline: none;
+    }
+
+    .btn-action {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        color: #4f46e5;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .btn-action:hover { background: #e0e7ff; }
+
+    .btn-ghost {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    .btn-ghost:hover { color: #ef4444; }
+
+    .btn-copy {
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .btn-copy:hover {
+        background: #f3f4f6;
+        color: #111827;
+    }
+
+    .privacy-tag { margin-top: 24px; color: #9ca3af; font-size: 13px; text-align: center; }
+
+    @media (max-width: 820px) {
+        .converter-grid { grid-template-columns: 1fr; }
+    }
+</style>

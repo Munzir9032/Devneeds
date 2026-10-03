@@ -1,0 +1,335 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import "../../styles/global.css";
+---
+
+<BaseLayout
+    title="UUID Generator - DevNeeds"
+    description="Free online UUID/GUID generator. Generate cryptographically secure version 4 UUIDs individually or in bulk directly in your browser."
+>
+    <Header />
+
+    <main class="tool-page">
+        <div class="container">
+            <!-- Breadcrumbs / Header -->
+            <div class="tool-header">
+                <a href="/tools" class="back-link">← All tools</a>
+                <div class="badge">DEVELOPER UTILITIES</div>
+                <h1>UUID Generator</h1>
+                <p>Generate cryptographically secure Version 4 (v4) Universally Unique Identifiers.</p>
+            </div>
+
+            <div class="generator-card">
+                <!-- Top Controls -->
+                <div class="controls-bar">
+                    <div class="control-group">
+                        <label for="quantity-select">Count:</label>
+                        <select id="quantity-select">
+                            <option value="1">1</option>
+                            <option value="5" selected>5</option>
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+
+                    <div class="options-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="hyphens-toggle" checked />
+                            <span>Include hyphens</span>
+                        </label>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="uppercase-toggle" />
+                            <span>UPPERCASE</span>
+                        </label>
+                    </div>
+
+                    <button id="generate-btn" type="button" class="btn-primary">
+                        Generate New
+                    </button>
+                </div>
+
+                <!-- Display Area -->
+                <div class="output-panel">
+                    <div class="panel-header">
+                        <span id="output-count-label">Generated UUIDs</span>
+                        <button id="copy-all-btn" type="button" class="btn-action">
+                            <span id="copy-label">Copy All</span>
+                        </button>
+                    </div>
+                    <textarea
+                        id="uuid-output"
+                        readonly
+                        spellcheck="false"
+                        rows="10"
+                    ></textarea>
+                </div>
+            </div>
+
+            <p class="privacy-tag">⚡ Generated client-side using Web Cryptography (`crypto.randomUUID()`). No IDs are stored or logged.</p>
+        </div>
+    </main>
+
+    <Footer />
+</BaseLayout>
+
+<script>
+    const quantitySelect = document.getElementById("quantity-select") as HTMLSelectElement | null;
+    const hyphensToggle = document.getElementById("hyphens-toggle") as HTMLInputElement | null;
+    const uppercaseToggle = document.getElementById("uppercase-toggle") as HTMLInputElement | null;
+    const generateBtn = document.getElementById("generate-btn") as HTMLButtonElement | null;
+    const copyAllBtn = document.getElementById("copy-all-btn") as HTMLButtonElement | null;
+    const copyLabel = document.getElementById("copy-label") as HTMLSpanElement | null;
+    const uuidOutput = document.getElementById("uuid-output") as HTMLTextAreaElement | null;
+    const outputCountLabel = document.getElementById("output-count-label") as HTMLElement | null;
+
+    function generateUUIDs() {
+        if (!uuidOutput) return;
+
+        const count = parseInt(quantitySelect?.value || "1", 10);
+        const includeHyphens = hyphensToggle?.checked ?? true;
+        const isUpper = uppercaseToggle?.checked ?? false;
+
+        const uuids: string[] = [];
+
+        for (let i = 0; i < count; i++) {
+            let id: string = crypto.randomUUID();
+            
+            if (!includeHyphens) {
+                id = id.replace(/-/g, "");
+            }
+
+            if (isUpper) {
+                id = id.toUpperCase();
+            }
+
+            uuids.push(id);
+        }
+
+        uuidOutput.value = uuids.join("\n");
+
+        if (outputCountLabel) {
+            outputCountLabel.textContent = `Generated ${count} UUID${count > 1 ? "s" : ""}`;
+        }
+    }
+
+    // Initial generation on load
+    generateUUIDs();
+
+    generateBtn?.addEventListener("click", generateUUIDs);
+    quantitySelect?.addEventListener("change", generateUUIDs);
+    hyphensToggle?.addEventListener("change", generateUUIDs);
+    uppercaseToggle?.addEventListener("change", generateUUIDs);
+
+    copyAllBtn?.addEventListener("click", async () => {
+        if (!uuidOutput?.value) return;
+
+        await navigator.clipboard.writeText(uuidOutput.value);
+        if (copyLabel) {
+            const original = copyLabel.textContent;
+            copyLabel.textContent = "Copied!";
+            setTimeout(() => {
+                copyLabel.textContent = original;
+            }, 1600);
+        }
+    });
+</script>
+
+<style>
+    .tool-page {
+        padding: 50px 0 90px;
+    }
+
+    .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 24px;
+        width: 100%;
+    }
+
+    .tool-header {
+        margin-bottom: 28px;
+    }
+
+    .back-link {
+        display: block;
+        margin-bottom: 12px;
+        color: #6366f1;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .badge {
+        display: inline-block;
+        margin-bottom: 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        color: #6366f1;
+    }
+
+    .tool-header h1 {
+        margin: 0 0 10px;
+        font-size: clamp(32px, 4vw, 44px);
+        letter-spacing: -1.5px;
+        color: #111827;
+    }
+
+    .tool-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .generator-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    }
+
+    .controls-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 16px 20px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .control-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    select {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 13px;
+        background: #ffffff;
+        color: #111827;
+        outline: none;
+        cursor: pointer;
+    }
+
+    .options-group {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+    }
+
+    .toggle-label input {
+        accent-color: #4f46e5;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #4f46e5;
+        border: none;
+        color: #ffffff;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .btn-primary:hover {
+        background: #4338ca;
+    }
+
+    .output-panel {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        font-size: 12px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-action {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        color: #4f46e5;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .btn-action:hover {
+        background: #e0e7ff;
+    }
+
+    textarea {
+        width: 100%;
+        min-height: 280px;
+        padding: 20px;
+        border: none;
+        outline: none;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.8;
+        color: #1f2937;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .privacy-tag {
+        margin-top: 24px;
+        color: #9ca3af;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    @media (max-width: 640px) {
+        .controls-bar {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .options-group {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            width: 100%;
+        }
+    }
+</style>

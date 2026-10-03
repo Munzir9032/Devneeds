@@ -1,0 +1,266 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import "../../styles/global.css";
+---
+
+<BaseLayout
+    title="Base64 Encoder - DevNeeds"
+    description="Free online Base64 encoder. Convert text, strings, and UTF-8 characters to Base64 instantly in your browser."
+>
+    <Header />
+
+    <main class="tool-page">
+        <div class="container">
+            <!-- Breadcrumbs / Header -->
+            <div class="tool-header">
+                <a href="/tools" class="back-link">← All tools</a>
+                <div class="badge">ENCODING</div>
+                <h1>Base64 Encoder</h1>
+                <p>Convert standard text and Unicode characters into Base64 format instantly.</p>
+            </div>
+
+            <!-- Tool Interface -->
+            <div class="editor-grid">
+                <!-- Input Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="input-text">Input Text</label>
+                        <div class="panel-actions">
+                            <button id="clear-btn" type="button" class="btn-ghost">Clear</button>
+                        </div>
+                    </div>
+                    <textarea
+                        id="input-text"
+                        placeholder="Paste or type your text here..."
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+
+                <!-- Output Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="output-text">Base64 Output</label>
+                        <div class="panel-actions">
+                            <button id="copy-btn" type="button" class="btn-action">
+                                <span id="copy-label">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea
+                        id="output-text"
+                        readonly
+                        placeholder="Base64 result will appear here..."
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+            </div>
+
+            <p class="privacy-tag">⚡ All conversions happen locally in your browser. No data leaves your machine.</p>
+        </div>
+    </main>
+
+    <Footer />
+</BaseLayout>
+
+<script>
+    const inputArea = document.getElementById("input-text") as HTMLTextAreaElement | null;
+    const outputArea = document.getElementById("output-text") as HTMLTextAreaElement | null;
+    const copyBtn = document.getElementById("copy-btn") as HTMLButtonElement | null;
+    const copyLabel = document.getElementById("copy-label") as HTMLSpanElement | null;
+    const clearBtn = document.getElementById("clear-btn") as HTMLButtonElement | null;
+
+    // Unicode-safe Base64 encoding using standard Web APIs
+    function encodeBase64(str: string): string {
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(str);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return btoa(binary);
+    }
+
+    inputArea?.addEventListener("input", () => {
+        const raw = inputArea.value;
+        if (!raw) {
+            if (outputArea) outputArea.value = "";
+            return;
+        }
+
+        try {
+            if (outputArea) outputArea.value = encodeBase64(raw);
+        } catch {
+            if (outputArea) outputArea.value = "Error encoding input string.";
+        }
+    });
+
+    clearBtn?.addEventListener("click", () => {
+        if (inputArea) inputArea.value = "";
+        if (outputArea) outputArea.value = "";
+        inputArea?.focus();
+    });
+
+    copyBtn?.addEventListener("click", async () => {
+        if (!outputArea?.value) return;
+        
+        await navigator.clipboard.writeText(outputArea.value);
+        if (copyLabel) {
+            const original = copyLabel.textContent;
+            copyLabel.textContent = "Copied!";
+            setTimeout(() => {
+                copyLabel.textContent = original;
+            }, 1800);
+        }
+    });
+</script>
+
+<style>
+    .tool-page {
+        padding: 50px 0 90px;
+    }
+
+    .container {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 24px;
+        width: 100%;
+    }
+
+    .tool-header {
+        margin-bottom: 32px;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 16px;
+        color: #6366f1;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .badge {
+        display: inline-block;
+        margin-bottom: 10px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+        color: #6366f1;
+    }
+
+    .tool-header h1 {
+        margin: 0 0 10px;
+        font-size: clamp(32px, 4vw, 44px);
+        letter-spacing: -1.5px;
+        color: #111827;
+    }
+
+    .tool-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .editor-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .panel {
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    }
+
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafafa;
+    }
+
+    .panel-header label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: color 0.15s ease;
+    }
+
+    .btn-ghost:hover {
+        color: #ef4444;
+    }
+
+    .btn-action {
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+        color: #4f46e5;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+
+    .btn-action:hover {
+        background: #e0e7ff;
+    }
+
+    textarea {
+        width: 100%;
+        min-height: 380px;
+        padding: 18px;
+        border: none;
+        outline: none;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #1f2937;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    textarea::placeholder {
+        color: #9ca3af;
+    }
+
+    .privacy-tag {
+        margin-top: 18px;
+        color: #9ca3af;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    @media (max-width: 820px) {
+        .editor-grid {
+            grid-template-columns: 1fr;
+        }
+
+        textarea {
+            min-height: 240px;
+        }
+    }
+</style>

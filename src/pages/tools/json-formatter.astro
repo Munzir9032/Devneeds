@@ -1,0 +1,223 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import "../../styles/global.css";
+---
+
+<BaseLayout
+    title="JSON Formatter & Beautifier - DevNeeds"
+    description="Free online JSON formatter and beautifier. Indent, format, clean, and validate JSON data instantly in your browser."
+>
+    <Header />
+
+    <main class="tool-page">
+        <div class="container">
+            <div class="tool-header">
+                <a href="/tools" class="back-link">← All tools</a>
+                <div class="badge">JSON</div>
+                <h1>JSON Formatter</h1>
+                <p>Format, beautify, and indent raw JSON data for effortless reading and debugging.</p>
+            </div>
+
+            <div class="options-bar">
+                <div class="control-group">
+                    <label for="indent-select">Indentation:</label>
+                    <select id="indent-select">
+                        <option value="2" selected>2 Spaces</option>
+                        <option value="4">4 Spaces</option>
+                        <option value="tab">1 Tab</option>
+                    </select>
+                </div>
+                <div class="action-buttons">
+                    <button id="sample-btn" type="button" class="btn-action">Sample</button>
+                    <button id="clear-btn" type="button" class="btn-ghost">Clear</button>
+                </div>
+            </div>
+
+            <div class="editor-grid">
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="json-input">Raw JSON Input</label>
+                    </div>
+                    <textarea
+                        id="json-input"
+                        placeholder="Paste raw or unformatted JSON here..."
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <label for="json-output">Formatted Output</label>
+                        <button id="copy-btn" type="button" class="btn-action">
+                            <span id="copy-label">Copy</span>
+                        </button>
+                    </div>
+                    <textarea
+                        id="json-output"
+                        readonly
+                        placeholder="Beautified JSON will appear here..."
+                        spellcheck="false"
+                    ></textarea>
+                </div>
+            </div>
+
+            <div id="status-box" class="status-box" hidden></div>
+            <p class="privacy-tag">⚡ All parsing happens client-side. No data ever leaves your computer.</p>
+        </div>
+    </main>
+
+    <Footer />
+</BaseLayout>
+
+<script>
+    const inputArea = document.querySelector("#json-input") as HTMLTextAreaElement | null;
+    const outputArea = document.querySelector("#json-output") as HTMLTextAreaElement | null;
+    const indentSelect = document.querySelector("#indent-select") as HTMLSelectElement | null;
+    const clearBtn = document.querySelector("#clear-btn") as HTMLButtonElement | null;
+    const sampleBtn = document.querySelector("#sample-btn") as HTMLButtonElement | null;
+    const copyBtn = document.querySelector("#copy-btn") as HTMLButtonElement | null;
+    const copyLabel = document.querySelector("#copy-label") as HTMLSpanElement | null;
+    const statusBox = document.querySelector("#status-box") as HTMLDivElement | null;
+
+    const SAMPLE_JSON = `{"title":"DevNeeds","tools":["JSON Formatter","Base64","Hash"],"active":true,"version":1.0,"metadata":{"runsInBrowser":true,"loginRequired":false}}`;
+
+    function formatJson() {
+        if (!inputArea || !outputArea || !statusBox) return;
+        const raw = inputArea.value.trim();
+
+        if (!raw) {
+            outputArea.value = "";
+            statusBox.hidden = true;
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(raw);
+            const indentVal = indentSelect?.value === "tab" ? "\t" : parseInt(indentSelect?.value || "2", 10);
+            outputArea.value = JSON.stringify(parsed, null, indentVal);
+            statusBox.hidden = true;
+        } catch (err: unknown) {
+            outputArea.value = "";
+            statusBox.hidden = false;
+            statusBox.className = "status-box error";
+            statusBox.textContent = err instanceof Error ? err.message : "Invalid JSON";
+        }
+    }
+
+    inputArea?.addEventListener("input", formatJson);
+    indentSelect?.addEventListener("change", formatJson);
+
+    sampleBtn?.addEventListener("click", () => {
+        if (inputArea) {
+            inputArea.value = SAMPLE_JSON;
+            formatJson();
+        }
+    });
+
+    clearBtn?.addEventListener("click", () => {
+        if (inputArea) inputArea.value = "";
+        if (outputArea) outputArea.value = "";
+        if (statusBox) statusBox.hidden = true;
+        inputArea?.focus();
+    });
+
+    copyBtn?.addEventListener("click", async () => {
+        if (!outputArea?.value) return;
+        await navigator.clipboard.writeText(outputArea.value);
+        if (copyLabel) {
+            const original = copyLabel.textContent;
+            copyLabel.textContent = "Copied!";
+            setTimeout(() => {
+                copyLabel.textContent = original;
+            }, 1600);
+        }
+    });
+</script>
+
+<style>
+    .tool-page { padding: 50px 0 90px; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; width: 100%; }
+    .tool-header { margin-bottom: 24px; }
+    .back-link { display: block; margin-bottom: 12px; color: #6366f1; font-size: 13px; font-weight: 600; text-decoration: none; }
+    .badge { display: inline-block; margin-bottom: 10px; font-size: 11px; font-weight: 800; letter-spacing: 1.2px; color: #6366f1; }
+    .tool-header h1 { margin: 0 0 10px; font-size: clamp(32px, 4vw, 44px); letter-spacing: -1.5px; color: #111827; }
+    .tool-header p { margin: 0; color: #64748b; font-size: 16px; }
+
+    .options-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+    }
+    .control-group { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #475569; }
+    select {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font-size: 13px;
+        background: #ffffff;
+        color: #111827;
+        outline: none;
+        cursor: pointer;
+    }
+    .action-buttons { display: flex; gap: 8px; }
+
+    .editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .panel {
+        display: flex;
+        flex-direction: column;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    }
+    .panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #fafafa;
+    }
+    .panel-header label { font-size: 13px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .btn-ghost { background: transparent; border: none; color: #94a3b8; font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+    .btn-ghost:hover { color: #ef4444; }
+    .btn-action { background: #eef2ff; border: 1px solid #c7d2fe; color: #4f46e5; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+    .btn-action:hover { background: #e0e7ff; }
+
+    textarea {
+        width: 100%;
+        min-height: 420px;
+        padding: 18px;
+        border: none;
+        outline: none;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #1f2937;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .status-box {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .status-box.error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+    .privacy-tag { margin-top: 24px; color: #9ca3af; font-size: 13px; text-align: center; }
+
+    @media (max-width: 820px) {
+        .editor-grid { grid-template-columns: 1fr; }
+        textarea { min-height: 240px; }
+    }
+</style>

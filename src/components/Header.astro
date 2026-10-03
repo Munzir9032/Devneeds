@@ -1,0 +1,64 @@
+<header class="site-header">
+    <div class="container">
+        <a href="/" class="logo">
+            DevNeeds
+        </a>
+
+        <nav>
+            <a href="/tools">Tools</a>
+            <a href="/categories">Categories</a>
+            <a href="/blog">Blog</a>
+            <a href="/about">About</a>
+        </nav>
+    </div>
+</header>
+
+<style>
+    .site-header {
+        border-bottom: 1px solid #e5e7eb;
+        background: #ffffff;
+    }
+
+    .container {
+        max-width: 94%;
+        margin: 0 auto;
+        padding: 20px 28px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .logo {
+        font-size: 25px;
+        font-weight: 700;
+    }
+
+    nav {
+        display: flex;
+        gap: 28px;
+    }
+
+    nav a {
+        color: #4b5563;
+        font-size: 16px;
+    }
+
+    nav a:hover {
+        color: #111827;
+    }
+
+    @media (max-width: 640px) {
+        nav {
+            gap: 14px;
+        }
+
+        nav a {
+            font-size: 14px;
+        }
+
+        nav a[href="/about"] {
+            display: none;
+        }
+    }
+</style>

@@ -1,0 +1,680 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import ToolCard from "../../components/ToolCard.astro";
+
+import { tools } from "../../data/tools";
+
+import "../../styles/global.css";
+
+const categories = [...new Set(tools.map((tool) => tool.category))];
+---
+
+<BaseLayout
+    title="Developer Tools - DevNeeds"
+    description="Explore free developer tools for formatting, encoding, converting, validating and transforming data."
+>
+    <Header />
+
+    <main>
+
+        <!-- Page Header -->
+
+        <section class="tools-hero">
+
+            <div class="container">
+
+                <div class="eyebrow">
+                    DEVNEEDS TOOLBOX
+                </div>
+
+                <h1>
+                    Developer tools,
+                    <span> All in one place.</span>
+                </h1>
+
+                <p>
+                    Free tools to help you format, convert, encode, validate
+                    and transform your data.
+                </p>
+
+                <div class="tools-search">
+
+                    <span class="search-icon">
+                        ⌕
+                    </span>
+
+                    <input
+                        id="tool-search"
+                        type="search"
+                        placeholder="Search tools..."
+                        aria-label="Search developer tools"
+                    />
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Tool Catalog -->
+
+        <section class="catalog-section">
+
+            <div class="container">
+
+                <div class="catalog-layout">
+
+                    <!-- Sidebar -->
+
+                    <aside class="category-sidebar">
+
+                        <div class="sidebar-title">
+                            Categories
+                        </div>
+
+                        <button
+                            class="category-button active"
+                            data-category="all"
+                        >
+                            All tools
+                            <span>{tools.length}</span>
+                        </button>
+
+                        {
+                            categories.map((category) => {
+
+                                const count =
+                                    tools.filter(
+                                        (tool) => tool.category === category
+                                    ).length;
+
+                                return (
+                                    <button
+                                        class="category-button"
+                                        data-category={category}
+                                    >
+                                        {category}
+                                        <span>{count}</span>
+                                    </button>
+                                );
+                            })
+                        }
+
+                    </aside>
+
+
+                    <!-- Tools -->
+
+                    <div class="catalog-content">
+
+                        {
+                            categories.map((category) => {
+
+                                const categoryTools =
+                                    tools.filter(
+                                        (tool) =>
+                                            tool.category === category
+                                    );
+
+                                return (
+                                    <section
+                                        class="tool-category"
+                                        data-category-section={category}
+                                    >
+
+                                        <div class="category-heading">
+
+                                            <h2>
+                                                {category}
+                                            </h2>
+
+                                            <span>
+                                                {categoryTools.length}
+                                                {categoryTools.length === 1
+                                                    ? " tool"
+                                                    : " tools"}
+                                            </span>
+
+                                        </div>
+
+
+                                        <div class="tool-grid">
+
+                                            {
+                                                categoryTools.map(
+                                                    (tool) => (
+                                                        <ToolCard
+                                                            tool={tool}
+                                                        />
+                                                    )
+                                                )
+                                            }
+
+                                        </div>
+
+                                    </section>
+                                );
+                            })
+                        }
+
+
+                        <div
+                            id="no-results"
+                            class="no-results"
+                            hidden
+                        >
+                            <h2>
+                                No tools found
+                            </h2>
+
+                            <p>
+                                Try searching for something else.
+                            </p>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <Footer />
+</BaseLayout>
+
+
+<script>
+
+    const searchInput =
+        document.querySelector<HTMLInputElement>("#tool-search");
+
+    const toolCards =
+        document.querySelectorAll<HTMLElement>(".tool-card");
+
+    const categorySections =
+        document.querySelectorAll<HTMLElement>(
+            "[data-category-section]"
+        );
+
+    const categoryButtons =
+        document.querySelectorAll<HTMLButtonElement>(
+            ".category-button"
+        );
+
+    const noResults =
+        document.querySelector<HTMLElement>("#no-results");
+
+
+    let activeCategory = "all";
+
+
+    function filterTools() {
+
+        const query =
+            searchInput?.value
+                .toLowerCase()
+                .trim() ?? "";
+
+
+        let visibleTools = 0;
+
+
+        categorySections.forEach((section) => {
+
+            const category =
+                section.dataset.categorySection ?? "";
+
+
+            const cards =
+                section.querySelectorAll<HTMLElement>(
+                    ".tool-card"
+                );
+
+
+            let visibleInCategory = 0;
+
+
+            cards.forEach((card) => {
+
+                const text =
+                    card.textContent
+                        ?.toLowerCase() ?? "";
+
+
+                const matchesSearch =
+                    text.includes(query);
+
+
+                const matchesCategory =
+                    activeCategory === "all" ||
+                    activeCategory === category;
+
+
+                const visible =
+                    matchesSearch &&
+                    matchesCategory;
+
+
+                card.style.display =
+                    visible ? "" : "none";
+
+
+                if (visible) {
+                    visibleInCategory++;
+                    visibleTools++;
+                }
+
+            });
+
+
+            section.style.display =
+                visibleInCategory > 0
+                    ? ""
+                    : "none";
+
+        });
+
+
+        if (noResults) {
+            noResults.hidden =
+                visibleTools !== 0;
+        }
+
+    }
+
+
+    searchInput?.addEventListener(
+        "input",
+        filterTools
+    );
+
+
+    categoryButtons.forEach((button) => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                categoryButtons.forEach(
+                    (item) =>
+                        item.classList.remove("active")
+                );
+
+
+                button.classList.add("active");
+
+
+                activeCategory =
+                    button.dataset.category ?? "all";
+
+
+                filterTools();
+
+            }
+        );
+
+    });
+
+</script>
+
+
+<style>
+
+    /* =========================================
+       HERO
+    ========================================== */
+
+    .tools-hero {
+        padding: 85px 0 75px;
+
+        background:
+            radial-gradient(
+                circle at 50% 0%,
+                rgba(99, 102, 241, 0.11),
+                transparent 50%
+            );
+
+        text-align: center;
+    }
+
+    .tools-hero .container {
+        max-width: 900px;      /* <-- Prevents text/input from sticking to screen edges */
+    }
+
+    .container {
+        max-width: 1427px;
+        margin: 0 auto;
+        padding: 0 24px;
+        width: 120%;
+    }
+
+    .eyebrow {
+        margin-bottom: 12px;
+
+        color: #6366f1;
+
+        font-size: 12px;
+        font-weight: 800;
+
+        letter-spacing: 1.5px;
+    }
+
+    .tools-hero h1 {
+        margin: 0;
+
+        color: #111827;
+
+        font-size: clamp(42px, 6vw, 68px);
+
+        line-height: 1.05;
+
+        letter-spacing: -3px;
+    }
+
+    .tools-hero h1 span {
+        color: #6366f1;
+    }
+
+    .tools-hero p {
+        max-width: 650px;
+
+        margin: 18px auto 0;
+
+        color: #64748b;
+
+        font-size: 17px;
+
+        line-height: 1.6;
+    }
+
+    .tools-search {
+        width: min(700px, 100%);
+
+        height: 58px;
+
+        margin: 30px auto 0;
+
+        display: flex;
+        align-items: center;
+
+        padding: 0 18px;
+
+        border: 1px solid #d1d5db;
+
+        border-radius: 11px;
+
+        background: #ffffff;
+
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, 0.06);
+
+        text-align: left;
+    }
+
+    .search-icon {
+        margin-right: 10px;
+
+        color: #94a3b8;
+
+        font-size: 25px;
+    }
+
+    .tools-search input {
+        width: 100%;
+
+        border: none;
+        outline: none;
+
+        background: transparent;
+
+        color: #111827;
+
+        font-size: 15px;
+    }
+
+
+    /* =========================================
+       CATALOG
+    ========================================== */
+
+    .catalog-section {
+        padding: 80px 0 100px;
+    }
+
+    .catalog-layout {
+        display: grid;
+
+        grid-template-columns: 220px 1fr;
+
+        gap: 55px;
+    }
+
+
+    /* Sidebar */
+
+    .category-sidebar {
+        position: sticky;
+
+        top: 25px;
+
+        align-self: start;
+    }
+
+    .sidebar-title {
+        margin-bottom: 13px;
+
+        color: #111827;
+
+        font-size: 13px;
+        font-weight: 800;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.8px;
+    }
+
+    .category-button {
+        width: 100%;
+
+        margin-bottom: 4px;
+
+        padding: 10px 12px;
+
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        border: none;
+
+        border-radius: 8px;
+
+        background: transparent;
+
+        color: #64748b;
+
+        font-size: 14px;
+
+        text-align: left;
+
+        transition:
+            background 0.2s ease,
+            color 0.2s ease;
+    }
+
+    .category-button span {
+        color: #94a3b8;
+
+        font-size: 12px;
+    }
+
+    .category-button:hover {
+        background: #f1f5f9;
+
+        color: #111827;
+    }
+
+    .category-button.active {
+        background: #eef2ff;
+
+        color: #4f46e5;
+
+        font-weight: 700;
+    }
+
+    .category-button.active span {
+        color: #6366f1;
+    }
+
+
+    /* Content */
+
+    .tool-category {
+        margin-bottom: 65px;
+    }
+
+    .category-heading {
+        display: flex;
+        align-items: center;
+
+        gap: 12px;
+
+        margin-bottom: 22px;
+    }
+
+    .category-heading h2 {
+        margin: 0;
+
+        color: #111827;
+
+        font-size: 24px;
+
+        letter-spacing: -0.7px;
+    }
+
+    .category-heading span {
+        color: #94a3b8;
+
+        font-size: 13px;
+    }
+
+    .tool-grid {
+        display: grid;
+
+        grid-template-columns: repeat(3, 1fr);
+
+        gap: 17px;
+    }
+
+
+    /* No results */
+
+    .no-results {
+        padding: 70px 20px;
+
+        text-align: center;
+    }
+
+    .no-results h2 {
+        margin: 0 0 8px;
+
+        font-size: 25px;
+    }
+
+    .no-results p {
+        margin: 0;
+
+        color: #64748b;
+    }
+
+
+    /* =========================================
+       TABLET
+    ========================================== */
+
+    @media (max-width: 1000px) {
+
+        .catalog-layout {
+            grid-template-columns: 1fr;
+
+            gap: 35px;
+        }
+
+        .category-sidebar {
+            position: static;
+
+            display: flex;
+
+            gap: 7px;
+
+            overflow-x: auto;
+
+            padding-bottom: 5px;
+        }
+
+        .sidebar-title {
+            display: none;
+        }
+
+        .category-button {
+            width: auto;
+
+            flex-shrink: 0;
+
+            margin: 0;
+        }
+
+        .tool-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+
+    /* =========================================
+       MOBILE
+    ========================================== */
+
+    @media (max-width: 640px) {
+
+        .container {
+            width: calc(100% - 32px);
+        }
+
+        .tools-hero {
+            padding: 65px 0 60px;
+        }
+
+        .tools-hero h1 {
+            font-size: 44px;
+
+            letter-spacing: -2px;
+        }
+
+        .tools-hero p {
+            font-size: 15px;
+        }
+
+        .tools-search {
+            height: 54px;
+        }
+
+        .catalog-section {
+            padding: 55px 0 70px;
+        }
+
+        .tool-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .tool-category {
+            margin-bottom: 50px;
+        }
+
+    }
+
+</style>

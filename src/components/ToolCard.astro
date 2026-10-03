@@ -1,0 +1,150 @@
+---
+import type { Tool } from "../data/tools";
+
+interface Props {
+    tool: Tool;
+}
+
+const { tool } = Astro.props;
+---
+
+<a
+    href={`/tools/${tool.slug}`}
+    class="tool-card"
+>
+    <div class="tool-icon">
+        {tool.icon}
+    </div>
+
+    <div class="tool-content">
+
+        <div class="tool-category">
+            {tool.category}
+        </div>
+
+        <h3>
+            {tool.name}
+        </h3>
+
+        <p>
+            {tool.description}
+        </p>
+
+    </div>
+
+    <div class="tool-arrow">
+        →
+    </div>
+</a>
+
+
+<style>
+
+    .tool-card {
+        position: relative;
+
+        display: flex;
+        flex-direction: column;
+
+        min-height: 220px;
+
+        padding: 25px;
+
+        border: 1px solid #e5e7eb;
+        border-radius: 15px;
+
+        background: #ffffff;
+
+        transition:
+            transform 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .tool-card:hover {
+        transform: translateY(-4px);
+
+        border-color: #c7d2fe;
+
+        box-shadow:
+            0 15px 35px rgba(0, 0, 0, 0.07);
+    }
+
+    .tool-icon {
+        width: 46px;
+        height: 46px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        margin-bottom: 20px;
+
+        border-radius: 10px;
+
+        background: #eef2ff;
+
+        color: #4f46e5;
+
+        font-size: 18px;
+        font-weight: 800;
+    }
+
+    .tool-category {
+        margin-bottom: 7px;
+
+        color: #6366f1;
+
+        font-size: 11px;
+        font-weight: 700;
+
+        letter-spacing: 0.7px;
+
+        text-transform: uppercase;
+    }
+
+    h3 {
+        margin: 0 0 8px;
+
+        color: #111827;
+
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .tool-content p {
+        margin: 0;
+
+        color: #6b7280;
+
+        font-size: 14px;
+
+        line-height: 1.6;
+    }
+
+    .tool-arrow {
+        position: absolute;
+
+        right: 23px;
+        bottom: 22px;
+
+        color: #6366f1;
+
+        font-size: 18px;
+
+        opacity: 0;
+
+        transform: translateX(-5px);
+
+        transition:
+            opacity 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .tool-card:hover .tool-arrow {
+        opacity: 1;
+
+        transform: translateX(0);
+    }
+
+</style>
